@@ -6,17 +6,16 @@ on:
       - 'v*'
     branches:
       - main
+      - develop
   pull_request:
     branches:
       - main
+      - develop
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest]
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -28,17 +27,37 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Configure npm for native modules
+        shell: powershell
+        run: |
+          npm config set msvs_version 2022
+          npm config set python python3
+
       - name: Install dependencies
+        shell: powershell
         run: npm ci
 
       - name: Build application
+        shell: powershell
         run: npm run build
 
       - name: Build Windows installer
-        if: matrix.os == 'windows-latest'
+        shell: powershell
         run: npm run dist:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify build artifacts
+        shell: powershell
+        run: |
+          if (Test-Path "release") {
+            Get-ChildItem -Path "release" -Filter "*.exe" | ForEach-Object {
+              Write-Host "Found installer: $($_.Name) ($([math]::Round($_.Length / 1MB, 2)) MB)"
+            }
+          } else {
+            Write-Error "release directory not found!"
+            exit 1
+          }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -53,25 +72,11 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-
-      - name: Build and publish
-        run: npm run dist:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: SmartTerminal-Windows
+          path: release
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -79,5 +84,6 @@ jobs:
           files: release/*.exe
           draft: false
           prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

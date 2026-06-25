@@ -4,14 +4,14 @@ directories:
   output: release
 files:
   - dist/**/*
-  - resources/**/*
   - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+asarUnpack:
+  - '**/node_modules/node-pty/**/*'
 win:
   target:
     - target: nsis
       arch:
         - x64
-  icon: resources/icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
