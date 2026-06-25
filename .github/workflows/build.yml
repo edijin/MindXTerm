@@ -27,22 +27,13 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Configure npm for native modules
-        shell: powershell
-        run: |
-          npm config set msvs_version 2022
-          npm config set python python3
-
       - name: Install dependencies
-        shell: powershell
         run: npm ci
 
       - name: Build application
-        shell: powershell
         run: npm run build
 
       - name: Build Windows installer
-        shell: powershell
         run: npm run dist:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
