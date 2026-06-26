@@ -21,5 +21,6 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: SmartTerminal
+  artifactName: SmartTerminal-Setup-${version}.exe
 portable:
   artifactName: SmartTerminal-Portable-${version}.exe

@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { app } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  getVersion: () => app.getVersion(),
   createLocalTerminal: () => ipcRenderer.invoke('terminal:create-local'),
   createSSHTerminal: (config: any) => ipcRenderer.invoke('terminal:create-ssh', config),
   writeToTerminal: (terminalId: string, data: string) => ipcRenderer.send('terminal:write', { terminalId, data }),

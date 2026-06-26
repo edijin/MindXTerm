@@ -22,7 +22,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     },
     backgroundColor: '#1e1e1e',
-    title: 'SmartTerminal',
+    title: `SmartTerminal v${app.getVersion()}`,
     show: false
   });
 

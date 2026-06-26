@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 
 const Toolbar: React.FC = () => {
@@ -7,6 +7,11 @@ const Toolbar: React.FC = () => {
   const addTerminal = useAppStore(state => state.addTerminal);
   const splitPane = useAppStore(state => state.splitPane);
   const paneLayout = useAppStore(state => state.paneLayout);
+  const [version, setVersion] = useState('');
+
+  useEffect(() => {
+    setVersion(window.electronAPI.getVersion());
+  }, []);
 
   const handleNewLocalTerminal = async () => {
     const result = await window.electronAPI.createLocalTerminal();
@@ -21,7 +26,7 @@ const Toolbar: React.FC = () => {
 
   return (
     <div className="toolbar">
-      <span className="title">⬛ SmartTerminal</span>
+      <span className="title">⬛ SmartTerminal{version && <span className="version">v{version}</span>}</span>
       
       <button onClick={handleNewLocalTerminal} title="新建本地终端">
         🖥️ 本地终端

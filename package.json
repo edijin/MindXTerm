@@ -17,7 +17,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.main.json",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
-    "dist:win": "npm run build && electron-builder --win"
+    "dist:win": "npm run build && electron-builder --win",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "release:patch": "npm run version:patch && git add -A && git commit -m \"chore: bump version to $(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\") && git push origin develop --tags",
+    "release:minor": "npm run version:minor && git add -A && git commit -m \"chore: bump version to $(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\") && git push origin develop --tags"
   },
   "dependencies": {
     "electron-store": "^8.1.0",

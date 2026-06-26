@@ -3,6 +3,7 @@ import { SSHConfig, AppConfig, AIAnalysisResult, AIAnalyzeRequest, TestAPIResult
 declare global {
   interface Window {
     electronAPI: {
+      getVersion: () => string;
       createLocalTerminal: () => Promise<{ success: boolean; terminalId?: string; error?: string }>;
       createSSHTerminal: (config: SSHConfig) => Promise<{ success: boolean; terminalId?: string; error?: string }>;
       writeToTerminal: (terminalId: string, data: string) => void;
