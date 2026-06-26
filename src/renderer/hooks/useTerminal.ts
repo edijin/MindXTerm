@@ -108,6 +108,9 @@ export function useTerminal({ terminalId, onCommandComplete }: UseTerminalOption
       }
     });
 
+    // 通知主进程：渲染端监听已就绪，可以 flush 缓存的早期输出（banner/prompt）
+    window.electronAPI.attachTerminal(terminalId);
+
     return () => {
       unsubscribeData();
       unsubscribeExit();

@@ -46,11 +46,14 @@ function createWindow() {
 
 app.whenReady().then(() => {
   configManager = new ConfigManager();
-  terminalManager = new TerminalManager(mainWindow);
-  
+  terminalManager = new TerminalManager(null);
+
   registerIPCHandlers(ipcMain, terminalManager, configManager);
-  
+
   createWindow();
+  // createWindow 之后 mainWindow 才有值，必须回填给 terminalManager，
+  // 否则 sendToRenderer 因 mainWindow 为 null 而丢弃所有终端输出
+  terminalManager.setMainWindow(mainWindow);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -42,6 +42,10 @@ export function registerIPCHandlers(
     terminalManager.closeTerminal(terminalId);
   });
 
+  ipcMain.on(IPC_CHANNELS.TERMINAL_ATTACH, (_event, terminalId: string) => {
+    terminalManager.attachTerminal(terminalId);
+  });
+
   ipcMain.handle(IPC_CHANNELS.CONFIG_GET, async () => {
     return configManager.getConfig();
   });

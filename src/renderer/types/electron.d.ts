@@ -9,6 +9,7 @@ declare global {
       writeToTerminal: (terminalId: string, data: string) => void;
       resizeTerminal: (terminalId: string, cols: number, rows: number) => void;
       closeTerminal: (terminalId: string) => void;
+      attachTerminal: (terminalId: string) => void;
       analyzeWithAI: (data: AIAnalyzeRequest) => Promise<AIAnalysisResult>;
       getConfig: () => Promise<AppConfig>;
       setConfig: (config: Partial<AppConfig>) => Promise<AppConfig>;

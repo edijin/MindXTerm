@@ -94,6 +94,7 @@ export const IPC_CHANNELS = {
   TERMINAL_WRITE: 'terminal:write',
   TERMINAL_RESIZE: 'terminal:resize',
   TERMINAL_CLOSE: 'terminal:close',
+  TERMINAL_ATTACH: 'terminal:attach',
   TERMINAL_DATA: 'terminal:data',
   TERMINAL_EXIT: 'terminal:exit',
   SSH_CONNECT: 'ssh:connect',

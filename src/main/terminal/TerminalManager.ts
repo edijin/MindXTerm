@@ -10,6 +10,10 @@ export class TerminalManager extends EventEmitter {
   private terminals: Map<string, TerminalInstance> = new Map();
   private mainWindow: BrowserWindow | null;
   private terminalCounter: number = 0;
+  // 渲染进程尚未 attach 的终端：缓存其早期输出，attach 后一次性 flush，
+  // 避免终端创建与 xterm 监听注册之间的竞态导致初始 banner/prompt 丢失
+  private pendingData: Map<string, string[]> = new Map();
+  private attachedTerminals: Set<string> = new Set();
 
   constructor(mainWindow: BrowserWindow | null) {
     super();
@@ -44,7 +48,8 @@ export class TerminalManager extends EventEmitter {
 
     terminal.start(cols, rows);
     this.terminals.set(id, terminal);
-    
+    this.pendingData.set(id, []);
+
     return { id };
   }
 
@@ -68,6 +73,7 @@ export class TerminalManager extends EventEmitter {
     try {
       await terminal.connect(cols, rows);
       this.terminals.set(id, terminal);
+      this.pendingData.set(id, []);
       return { id };
     } catch (error: any) {
       throw new Error(`SSH connection failed: ${error.message || 'Unknown error'}`);
@@ -97,9 +103,22 @@ export class TerminalManager extends EventEmitter {
     if (terminal) {
       terminal.close();
       this.terminals.delete(terminalId);
+      this.attachedTerminals.delete(terminalId);
+      this.pendingData.delete(terminalId);
       return true;
     }
     return false;
+  }
+
+  attachTerminal(terminalId: string): void {
+    this.attachedTerminals.add(terminalId);
+    const buffer = this.pendingData.get(terminalId);
+    if (buffer && buffer.length > 0) {
+      for (const data of buffer) {
+        this.sendToRenderer(IPC_CHANNELS.TERMINAL_DATA, { terminalId, data });
+      }
+    }
+    this.pendingData.delete(terminalId);
   }
 
   closeAll(): void {
@@ -118,6 +137,17 @@ export class TerminalManager extends EventEmitter {
   }
 
   private sendToRenderer(channel: string, data: any): void {
+    // 终端数据：若渲染进程尚未 attach，先缓存，等 attach 后 flush
+    if (channel === IPC_CHANNELS.TERMINAL_DATA) {
+      const terminalId = data.terminalId;
+      if (!this.attachedTerminals.has(terminalId)) {
+        const buffer = this.pendingData.get(terminalId);
+        if (buffer) {
+          buffer.push(data.data);
+        }
+        return;
+      }
+    }
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send(channel, data);
     }
