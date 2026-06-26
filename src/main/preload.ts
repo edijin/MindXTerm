@@ -3,9 +3,9 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('electronAPI', {
   createLocalTerminal: () => ipcRenderer.invoke('terminal:create-local'),
   createSSHTerminal: (config: any) => ipcRenderer.invoke('terminal:create-ssh', config),
-  writeToTerminal: (terminalId: string, data: string) => ipcRenderer.invoke('terminal:write', { terminalId, data }),
-  resizeTerminal: (terminalId: string, cols: number, rows: number) => ipcRenderer.invoke('terminal:resize', { terminalId, cols, rows }),
-  closeTerminal: (terminalId: string) => ipcRenderer.invoke('terminal:close', terminalId),
+  writeToTerminal: (terminalId: string, data: string) => ipcRenderer.send('terminal:write', { terminalId, data }),
+  resizeTerminal: (terminalId: string, cols: number, rows: number) => ipcRenderer.send('terminal:resize', { terminalId, cols, rows }),
+  closeTerminal: (terminalId: string) => ipcRenderer.send('terminal:close', terminalId),
   analyzeWithAI: (data: any) => ipcRenderer.invoke('ai:analyze', data),
   getConfig: () => ipcRenderer.invoke('config:get'),
   setConfig: (config: any) => ipcRenderer.invoke('config:set', config),

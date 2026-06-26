@@ -5,9 +5,9 @@ declare global {
     electronAPI: {
       createLocalTerminal: () => Promise<{ success: boolean; terminalId?: string; error?: string }>;
       createSSHTerminal: (config: SSHConfig) => Promise<{ success: boolean; terminalId?: string; error?: string }>;
-      writeToTerminal: (terminalId: string, data: string) => Promise<boolean>;
-      resizeTerminal: (terminalId: string, cols: number, rows: number) => Promise<boolean>;
-      closeTerminal: (terminalId: string) => Promise<boolean>;
+      writeToTerminal: (terminalId: string, data: string) => void;
+      resizeTerminal: (terminalId: string, cols: number, rows: number) => void;
+      closeTerminal: (terminalId: string) => void;
       analyzeWithAI: (data: AIAnalyzeRequest) => Promise<AIAnalysisResult>;
       getConfig: () => Promise<AppConfig>;
       setConfig: (config: Partial<AppConfig>) => Promise<AppConfig>;

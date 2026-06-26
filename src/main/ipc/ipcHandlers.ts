@@ -30,16 +30,16 @@ export function registerIPCHandlers(
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_WRITE, async (_event, data: { terminalId: string; data: string }) => {
-    return terminalManager.writeToTerminal(data.terminalId, data.data);
+  ipcMain.on(IPC_CHANNELS.TERMINAL_WRITE, (_event, data: { terminalId: string; data: string }) => {
+    terminalManager.writeToTerminal(data.terminalId, data.data);
   });
 
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_RESIZE, async (_event, data: { terminalId: string; cols: number; rows: number }) => {
-    return terminalManager.resizeTerminal(data.terminalId, data.cols, data.rows);
+  ipcMain.on(IPC_CHANNELS.TERMINAL_RESIZE, (_event, data: { terminalId: string; cols: number; rows: number }) => {
+    terminalManager.resizeTerminal(data.terminalId, data.cols, data.rows);
   });
 
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_CLOSE, async (_event, terminalId: string) => {
-    return terminalManager.closeTerminal(terminalId);
+  ipcMain.on(IPC_CHANNELS.TERMINAL_CLOSE, (_event, terminalId: string) => {
+    terminalManager.closeTerminal(terminalId);
   });
 
   ipcMain.handle(IPC_CHANNELS.CONFIG_GET, async () => {

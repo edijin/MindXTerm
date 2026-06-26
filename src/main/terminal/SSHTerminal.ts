@@ -23,7 +23,8 @@ export class SSHTerminal extends EventEmitter {
         host: this.config.host,
         port: this.config.port,
         username: this.config.username,
-        readyTimeout: 10000
+        readyTimeout: 20000,
+        tryKeyboard: true
       };
 
       if (this.config.privateKey) {
@@ -31,13 +32,27 @@ export class SSHTerminal extends EventEmitter {
         if (this.config.passphrase) {
           connectConfig.passphrase = this.config.passphrase;
         }
-      } else if (this.config.password) {
+      }
+      if (this.config.password) {
         connectConfig.password = this.config.password;
       }
 
+      // 处理 keyboard-interactive 认证（很多 Linux 服务器要求此方式）
+      this.conn.on('keyboard-interactive', (
+        _name: string,
+        _instructions: string,
+        _lang: string,
+        prompts: Array<{ prompt: string; echo: boolean }>,
+        finish: (responses: string[]) => void
+      ) => {
+        // 对所有提示都回复密码
+        const responses = prompts.map(() => this.config.password || '');
+        finish(responses);
+      });
+
       this.conn.on('ready', () => {
         this.connected = true;
-        
+
         this.conn!.shell({
           term: 'xterm-256color',
           cols,

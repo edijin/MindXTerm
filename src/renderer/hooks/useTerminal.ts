@@ -144,10 +144,8 @@ export function useTerminal({ terminalId, onCommandComplete }: UseTerminalOption
   }, [terminalId, addCommandHistory, onCommandComplete]);
 
   const handleInput = useCallback((data: string) => {
-    if (!xtermRef.current) return;
-
-    const xterm = xtermRef.current;
-
+    // 直接转发所有输入给 pty，由 pty 处理回显和行编辑
+    // 检测 Enter 键以记录命令（用于 AI 分析）
     if (data === '\r') {
       const command = commandBufferRef.current.trim();
       if (command) {
@@ -157,40 +155,26 @@ export function useTerminal({ terminalId, onCommandComplete }: UseTerminalOption
       outputBufferRef.current = '';
       promptEndRef.current = false;
       isAISuggestionRef.current = false;
-      window.electronAPI.writeToTerminal(terminalId, '\r');
-      return;
-    }
-
-    if (data === '\u007f') {
-      if (commandBufferRef.current.length > 0) {
-        commandBufferRef.current = commandBufferRef.current.slice(0, -1);
-        window.electronAPI.writeToTerminal(terminalId, '\b \b');
-      }
-      return;
-    }
-
-    if (data === '\u0003') {
+    } else if (data === '\u007f') {
+      // Backspace - 更新本地命令缓冲
+      commandBufferRef.current = commandBufferRef.current.slice(0, -1);
+    } else if (data === '\u0003') {
+      // Ctrl+C - 清空缓冲
       commandBufferRef.current = '';
       outputBufferRef.current = '';
-      window.electronAPI.writeToTerminal(terminalId, data);
-      return;
+    } else if (!data.startsWith('\u001b') && data.length === 1) {
+      // 普通可打印字符（排除转义序列）
+      commandBufferRef.current += data;
     }
 
-    if (data.startsWith('\u001b')) {
-      window.electronAPI.writeToTerminal(terminalId, data);
-      return;
-    }
-
-    commandBufferRef.current += data;
+    // 所有输入直接转发给 pty
     window.electronAPI.writeToTerminal(terminalId, data);
   }, [terminalId, setLastCommand]);
 
   const writeInput = useCallback((data: string, isAISuggestion: boolean = false) => {
     isAISuggestionRef.current = isAISuggestion;
-    
-    for (const char of data) {
-      commandBufferRef.current += char;
-    }
+    commandBufferRef.current += data;
+    // 只发送给 pty，pty 会自动回显
     window.electronAPI.writeToTerminal(terminalId, data);
   }, [terminalId]);
 
@@ -209,13 +193,13 @@ export function useTerminal({ terminalId, onCommandComplete }: UseTerminalOption
 
   const doExecuteCommand = useCallback((command: string) => {
     if (!xtermRef.current) return;
-    
+
     setAnalysis(terminalId, null);
-    xtermRef.current.write(command + '\r');
     commandBufferRef.current = '';
     outputBufferRef.current = '';
     promptEndRef.current = false;
-    
+
+    // 只发送给 pty，pty 会自动回显到 xterm
     window.electronAPI.writeToTerminal(terminalId, command + '\r');
   }, [terminalId, setAnalysis]);
 
