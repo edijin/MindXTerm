@@ -24,7 +24,7 @@ export class SSHTerminal extends EventEmitter {
         port: this.config.port,
         username: this.config.username,
         readyTimeout: 20000,
-        tryKeyboard: true
+        ...({ tryKeyboard: true } as any)
       };
 
       if (this.config.privateKey) {
@@ -38,7 +38,7 @@ export class SSHTerminal extends EventEmitter {
       }
 
       // 处理 keyboard-interactive 认证（很多 Linux 服务器要求此方式）
-      this.conn.on('keyboard-interactive', (
+      (this.conn as any).on('keyboard-interactive', (
         _name: string,
         _instructions: string,
         _lang: string,
