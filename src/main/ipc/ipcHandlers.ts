@@ -1,9 +1,21 @@
-import { IpcMain } from 'electron';
+import { IpcMain, IpcMainInvokeEvent, IpcMainEvent } from 'electron';
 import { TerminalManager } from '../terminal/TerminalManager';
 import { ConfigManager } from '../config/ConfigManager';
 import { Analyzer } from '../ai/Analyzer';
 import { IPC_CHANNELS, SSHConfig, AIAnalyzeRequest, AppConfig } from '../../shared/types';
 import os from 'os';
+
+function validateSender(event: IpcMainInvokeEvent | IpcMainEvent): boolean {
+  if (!event.sender) {
+    console.warn(`IPC request rejected: no sender`);
+    return false;
+  }
+  if (event.frameId !== 0) {
+    console.warn(`IPC request rejected: message from non-main-frame context (frameId: ${event.frameId})`);
+    return false;
+  }
+  return true;
+}
 
 export function registerIPCHandlers(
   ipcMain: IpcMain,
@@ -12,7 +24,10 @@ export function registerIPCHandlers(
 ): void {
   const analyzer = new Analyzer(configManager.getAPIConfig());
 
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_CREATE_LOCAL, async (_event, _args) => {
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_CREATE_LOCAL, async (event, _args) => {
+    if (!validateSender(event)) {
+      return { success: false, error: 'Invalid request source' };
+    }
     try {
       const result = await terminalManager.createLocalTerminal();
       return { success: true, terminalId: result.id };
@@ -21,7 +36,10 @@ export function registerIPCHandlers(
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_CREATE_SSH, async (_event, config: SSHConfig) => {
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_CREATE_SSH, async (event, config: SSHConfig) => {
+    if (!validateSender(event)) {
+      return { success: false, error: 'Invalid request source' };
+    }
     try {
       const result = await terminalManager.createSSHTerminal(config);
       return { success: true, terminalId: result.id };
@@ -30,27 +48,37 @@ export function registerIPCHandlers(
     }
   });
 
-  ipcMain.on(IPC_CHANNELS.TERMINAL_WRITE, (_event, data: { terminalId: string; data: string }) => {
+  ipcMain.on(IPC_CHANNELS.TERMINAL_WRITE, (event, data: { terminalId: string; data: string }) => {
+    if (!validateSender(event)) return;
     terminalManager.writeToTerminal(data.terminalId, data.data);
   });
 
-  ipcMain.on(IPC_CHANNELS.TERMINAL_RESIZE, (_event, data: { terminalId: string; cols: number; rows: number }) => {
+  ipcMain.on(IPC_CHANNELS.TERMINAL_RESIZE, (event, data: { terminalId: string; cols: number; rows: number }) => {
+    if (!validateSender(event)) return;
     terminalManager.resizeTerminal(data.terminalId, data.cols, data.rows);
   });
 
-  ipcMain.on(IPC_CHANNELS.TERMINAL_CLOSE, (_event, terminalId: string) => {
+  ipcMain.on(IPC_CHANNELS.TERMINAL_CLOSE, (event, terminalId: string) => {
+    if (!validateSender(event)) return;
     terminalManager.closeTerminal(terminalId);
   });
 
-  ipcMain.on(IPC_CHANNELS.TERMINAL_ATTACH, (_event, terminalId: string) => {
+  ipcMain.on(IPC_CHANNELS.TERMINAL_ATTACH, (event, terminalId: string) => {
+    if (!validateSender(event)) return;
     terminalManager.attachTerminal(terminalId);
   });
 
-  ipcMain.handle(IPC_CHANNELS.CONFIG_GET, async () => {
+  ipcMain.handle(IPC_CHANNELS.CONFIG_GET, async (event) => {
+    if (!validateSender(event)) {
+      return null;
+    }
     return configManager.getConfig();
   });
 
-  ipcMain.handle(IPC_CHANNELS.CONFIG_SET, async (_event, config: Partial<AppConfig>) => {
+  ipcMain.handle(IPC_CHANNELS.CONFIG_SET, async (event, config: Partial<AppConfig>) => {
+    if (!validateSender(event)) {
+      return null;
+    }
     const savedConfig = configManager.setConfig(config);
     if (config.api) {
       analyzer.updateConfig(configManager.getAPIConfig());
@@ -58,11 +86,21 @@ export function registerIPCHandlers(
     return savedConfig;
   });
 
-  ipcMain.handle(IPC_CHANNELS.CONFIG_TEST_API, async (_event, config?: any) => {
+  ipcMain.handle(IPC_CHANNELS.CONFIG_TEST_API, async (event, config?: any) => {
+    if (!validateSender(event)) {
+      return { success: false, message: 'Invalid request source' };
+    }
     return configManager.testAPIConnection(config);
   });
 
-  ipcMain.handle(IPC_CHANNELS.AI_ANALYZE, async (_event, request: AIAnalyzeRequest) => {
+  ipcMain.handle(IPC_CHANNELS.AI_ANALYZE, async (event, request: AIAnalyzeRequest) => {
+    if (!validateSender(event)) {
+      return {
+        analysis: 'Invalid request source',
+        suggestions: [],
+        isTaskComplete: false
+      };
+    }
     try {
       const platform = os.platform() === 'win32' ? 'Windows' : 'Linux/Unix';
       const result = await analyzer.analyze(
@@ -82,7 +120,10 @@ export function registerIPCHandlers(
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.CHECK_BLACKLIST, async (_event, command: string) => {
+  ipcMain.handle(IPC_CHANNELS.CHECK_BLACKLIST, async (event, command: string) => {
+    if (!validateSender(event)) {
+      return false;
+    }
     return configManager.isBlacklisted(command.trim());
   });
 }

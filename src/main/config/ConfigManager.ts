@@ -1,5 +1,36 @@
 import Store from 'electron-store';
 import { AppConfig, DEFAULT_CONFIG, APIConfig, TestAPIResult } from '../../shared/types';
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+
+const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
+const ENCRYPTION_KEY = Buffer.from('smart-terminal-secure-key-256-bit-encryption!', 'utf-8');
+
+function encrypt(text: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv(ENCRYPTION_ALGORITHM, ENCRYPTION_KEY, iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag().toString('hex');
+  return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+}
+
+function decrypt(encryptedText: string): string {
+  try {
+    const [ivHex, authTagHex, encryptedHex] = encryptedText.split(':');
+    if (!ivHex || !authTagHex || !encryptedHex) {
+      return encryptedText;
+    }
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, ENCRYPTION_KEY, iv);
+    decipher.setAuthTag(authTag);
+    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch {
+    return encryptedText;
+  }
+}
 
 export class ConfigManager {
   private store: Store<AppConfig>;
@@ -12,31 +43,61 @@ export class ConfigManager {
   }
 
   getConfig(): AppConfig {
-    return this.store.store;
+    const rawConfig = this.store.store;
+    return {
+      ...rawConfig,
+      api: {
+        ...rawConfig.api,
+        apiKey: decrypt(rawConfig.api.apiKey)
+      }
+    };
   }
 
   setConfig(config: Partial<AppConfig>): AppConfig {
     if (config.api) {
-      this.store.set('api', { ...this.getConfig().api, ...config.api });
+      this.store.set('api', { 
+        ...this.getRawAPIConfig(), 
+        ...config.api,
+        apiKey: config.api.apiKey ? encrypt(config.api.apiKey) : this.getRawAPIConfig().apiKey
+      });
     }
     if (config.blacklist) {
       this.store.set('blacklist', config.blacklist);
     }
     if (config.terminal) {
-      this.store.set('terminal', { ...this.getConfig().terminal, ...config.terminal });
+      this.store.set('terminal', { ...this.getRawConfig().terminal, ...config.terminal });
     }
     return this.getConfig();
   }
 
   getAPIConfig(): APIConfig {
+    const raw = this.store.get('api');
+    return {
+      ...raw,
+      apiKey: decrypt(raw.apiKey)
+    };
+  }
+
+  private getRawAPIConfig(): APIConfig {
     return this.store.get('api');
   }
 
+  private getRawConfig(): AppConfig {
+    return this.store.store;
+  }
+
   setAPIConfig(apiConfig: Partial<APIConfig>): APIConfig {
-    const current = this.getAPIConfig();
-    const updated = { ...current, ...apiConfig };
+    const current = this.getRawAPIConfig();
+    const updated = { 
+      ...current, 
+      ...apiConfig,
+      apiKey: apiConfig.apiKey ? encrypt(apiConfig.apiKey) : current.apiKey
+    };
     this.store.set('api', updated);
-    return updated;
+    return {
+      ...updated,
+      apiKey: decrypt(updated.apiKey)
+    };
   }
 
   getBlacklist(): string[] {
