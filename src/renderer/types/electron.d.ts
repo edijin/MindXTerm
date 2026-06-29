@@ -12,7 +12,7 @@ declare global {
       attachTerminal: (terminalId: string) => void;
       analyzeWithAI: (data: AIAnalyzeRequest) => Promise<AIAnalysisResult>;
       getConfig: () => Promise<AppConfig>;
-      setConfig: (config: Partial<AppConfig>) => Promise<AppConfig>;
+      setConfig: (config: Partial<AppConfig>) => Promise<AppConfig | null>;
       testAPI: (config?: any) => Promise<TestAPIResult>;
       checkBlacklist: (command: string) => Promise<boolean>;
       onTerminalData: (callback: (data: TerminalData) => void) => () => void;

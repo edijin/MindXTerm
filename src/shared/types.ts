@@ -89,6 +89,7 @@ export interface TestAPIResult {
 }
 
 export const IPC_CHANNELS = {
+  GET_VERSION: 'app:get-version',
   TERMINAL_CREATE_LOCAL: 'terminal:create-local',
   TERMINAL_CREATE_SSH: 'terminal:create-ssh',
   TERMINAL_WRITE: 'terminal:write',

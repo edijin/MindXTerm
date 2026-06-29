@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { app } from 'electron';
 import { 
   SSHConfig, 
   AppConfig, 
@@ -21,7 +20,7 @@ interface ElectronAPI {
   attachTerminal: (terminalId: string) => void;
   analyzeWithAI: (data: AIAnalyzeRequest) => Promise<AIAnalysisResult>;
   getConfig: () => Promise<AppConfig>;
-  setConfig: (config: Partial<AppConfig>) => Promise<AppConfig>;
+  setConfig: (config: Partial<AppConfig>) => Promise<AppConfig | null>;
   testAPI: (config?: Partial<AppConfig['api']>) => Promise<TestAPIResult>;
   checkBlacklist: (command: string) => Promise<boolean>;
   onTerminalData: (callback: (data: TerminalData) => void) => () => void;
@@ -29,7 +28,7 @@ interface ElectronAPI {
 }
 
 const electronAPI: ElectronAPI = {
-  getVersion: () => app.getVersion(),
+  getVersion: () => ipcRenderer.sendSync(IPC_CHANNELS.GET_VERSION),
   createLocalTerminal: () => ipcRenderer.invoke(IPC_CHANNELS.TERMINAL_CREATE_LOCAL),
   createSSHTerminal: (config: SSHConfig) => ipcRenderer.invoke(IPC_CHANNELS.TERMINAL_CREATE_SSH, config),
   writeToTerminal: (terminalId: string, data: string) => ipcRenderer.send(IPC_CHANNELS.TERMINAL_WRITE, { terminalId, data }),

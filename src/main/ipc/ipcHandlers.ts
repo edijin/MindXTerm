@@ -1,4 +1,4 @@
-import { IpcMain, IpcMainInvokeEvent, IpcMainEvent } from 'electron';
+import { IpcMain, IpcMainInvokeEvent, IpcMainEvent, app } from 'electron';
 import { TerminalManager } from '../terminal/TerminalManager';
 import { ConfigManager } from '../config/ConfigManager';
 import { Analyzer } from '../ai/Analyzer';
@@ -23,6 +23,10 @@ export function registerIPCHandlers(
   configManager: ConfigManager
 ): void {
   const analyzer = new Analyzer(configManager.getAPIConfig());
+
+  ipcMain.on(IPC_CHANNELS.GET_VERSION, (event) => {
+    event.returnValue = app.getVersion();
+  });
 
   ipcMain.handle(IPC_CHANNELS.TERMINAL_CREATE_LOCAL, async (event, _args) => {
     if (!validateSender(event)) {

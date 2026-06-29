@@ -29,7 +29,9 @@ const SettingsDialog: React.FC = () => {
       api: apiConfig,
       blacklist
     });
-    setConfig(newConfig);
+    if (newConfig) {
+      setConfig(newConfig);
+    }
     setSettingsOpen(false);
   };
 
