@@ -1,9 +1,9 @@
 import Store from 'electron-store';
 import { AppConfig, DEFAULT_CONFIG, APIConfig, TestAPIResult } from '../../shared/types';
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
-const ENCRYPTION_KEY = Buffer.from('smart-terminal-secure-key-256-bit-encryption!', 'utf-8');
+const ENCRYPTION_KEY = scryptSync('smart-terminal-storage-encryption-key', 'smart-terminal-salt', 32);
 
 function encrypt(text: string): string {
   const iv = randomBytes(12);

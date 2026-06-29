@@ -10,8 +10,8 @@ function validateSender(event: IpcMainInvokeEvent | IpcMainEvent): boolean {
     console.warn(`IPC request rejected: no sender`);
     return false;
   }
-  if (event.frameId !== 0) {
-    console.warn(`IPC request rejected: message from non-main-frame context (frameId: ${event.frameId})`);
+  if (event.sender.isDestroyed()) {
+    console.warn(`IPC request rejected: sender is destroyed`);
     return false;
   }
   return true;
@@ -79,11 +79,16 @@ export function registerIPCHandlers(
     if (!validateSender(event)) {
       return null;
     }
-    const savedConfig = configManager.setConfig(config);
-    if (config.api) {
-      analyzer.updateConfig(configManager.getAPIConfig());
+    try {
+      const savedConfig = configManager.setConfig(config);
+      if (config.api) {
+        analyzer.updateConfig(configManager.getAPIConfig());
+      }
+      return savedConfig;
+    } catch (error: any) {
+      console.error('Failed to save config:', error);
+      return null;
     }
-    return savedConfig;
   });
 
   ipcMain.handle(IPC_CHANNELS.CONFIG_TEST_API, async (event, config?: any) => {
