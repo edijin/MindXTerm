@@ -21,6 +21,7 @@ interface AppState {
   config: AppConfig | null;
   settingsOpen: boolean;
   sshDialogOpen: boolean;
+  startupDialogOpen: boolean;
   confirmDialog: {
     open: boolean;
     command: string;
@@ -40,6 +41,7 @@ interface AppState {
   setConfig: (config: AppConfig) => void;
   setSettingsOpen: (open: boolean) => void;
   setSSHDialogOpen: (open: boolean) => void;
+  setStartupDialogOpen: (open: boolean) => void;
   showConfirmDialog: (command: string, terminalId: string, onConfirm: () => void) => void;
   closeConfirmDialog: () => void;
   splitPane: () => void;
@@ -55,6 +57,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   config: null,
   settingsOpen: false,
   sshDialogOpen: false,
+  startupDialogOpen: true,
   confirmDialog: null,
 
   addTerminal: (id, type, title) => set((state) => {
@@ -208,6 +211,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSettingsOpen: (open) => set({ settingsOpen: open }),
 
   setSSHDialogOpen: (open) => set({ sshDialogOpen: open }),
+
+  setStartupDialogOpen: (open) => set({ startupDialogOpen: open }),
 
   showConfirmDialog: (command, terminalId, onConfirm) => set({
     confirmDialog: { open: true, command, terminalId, onConfirm }

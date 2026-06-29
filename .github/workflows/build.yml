@@ -65,11 +65,24 @@ jobs:
             exit 1
           }
 
+      - name: Create versioned zip archive
+        shell: powershell
+        run: |
+          $version = "${{ steps.get-version.outputs.version }}"
+          $zipName = "SmartTerminal-v${version}-Windows.zip"
+          Compress-Archive -Path "release\*.exe" -DestinationPath "release\${zipName}"
+          Write-Host "Created: ${zipName}"
+          Get-ChildItem -Path "release\${zipName}" | ForEach-Object {
+            Write-Host "Zip size: $([math]::Round($_.Length / 1MB, 2)) MB"
+          }
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: SmartTerminal-v${{ steps.get-version.outputs.version }}-Windows
-          path: release/*.exe
+          path: |
+            release/*.exe
+            release/*.zip
           retention-days: 30
 
   release:
@@ -87,7 +100,9 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: release/*.exe
+          files: |
+            release/*.zip
+            release/*.exe
           draft: false
           prerelease: false
           generate_release_notes: true
