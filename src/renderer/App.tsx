@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Toolbar from './components/Layout/Toolbar';
 import WindowManager from './components/Layout/WindowManager';
 import StartupDialog from './components/Layout/StartupDialog';
@@ -9,17 +9,30 @@ import { useAppStore } from './store/useAppStore';
 import { DEFAULT_CONFIG } from '../shared/types';
 
 const App: React.FC = () => {
-  const config = useAppStore(state => state.config);
   const setConfig = useAppStore(state => state.setConfig);
+  const setStartupDialogOpen = useAppStore(state => state.setStartupDialogOpen);
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   useEffect(() => {
     const initApp = async () => {
-      const savedConfig = await window.electronAPI.getConfig();
-      setConfig(savedConfig || DEFAULT_CONFIG);
+      try {
+        const savedConfig = await window.electronAPI.getConfig();
+        setConfig(savedConfig || DEFAULT_CONFIG);
+      } catch (err) {
+        setConfig(DEFAULT_CONFIG);
+      }
+      setConfigLoaded(true);
     };
 
     initApp();
   }, []);
+
+  // 确保启动对话框在初始化完成后显示
+  useEffect(() => {
+    if (configLoaded) {
+      setStartupDialogOpen(true);
+    }
+  }, [configLoaded, setStartupDialogOpen]);
 
   return (
     <div className="app">

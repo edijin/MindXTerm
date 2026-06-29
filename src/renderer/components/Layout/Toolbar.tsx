@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 const Toolbar: React.FC = () => {
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
   const setSSHDialogOpen = useAppStore(state => state.setSSHDialogOpen);
+  const setStartupDialogOpen = useAppStore(state => state.setStartupDialogOpen);
   const addTerminal = useAppStore(state => state.addTerminal);
   const splitPane = useAppStore(state => state.splitPane);
   const paneLayout = useAppStore(state => state.paneLayout);
@@ -12,6 +13,10 @@ const Toolbar: React.FC = () => {
   useEffect(() => {
     setVersion(window.electronAPI.getVersion());
   }, []);
+
+  const handleNewConnection = () => {
+    setStartupDialogOpen(true);
+  };
 
   const handleNewLocalTerminal = async () => {
     const result = await window.electronAPI.createLocalTerminal();
@@ -28,6 +33,12 @@ const Toolbar: React.FC = () => {
     <div className="toolbar">
       <span className="title">⬛ SmartTerminal{version && <span className="version">v{version}</span>}</span>
       
+      <button onClick={handleNewConnection} title="新建连接" className="primary">
+        🔗 新建连接
+      </button>
+
+      <div className="separator" />
+
       <button onClick={handleNewLocalTerminal} title="新建本地终端">
         🖥️ 本地终端
       </button>

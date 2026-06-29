@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 
 const StartupDialog: React.FC = () => {
@@ -6,6 +6,17 @@ const StartupDialog: React.FC = () => {
   const setStartupDialogOpen = useAppStore(state => state.setStartupDialogOpen);
   const setSSHDialogOpen = useAppStore(state => state.setSSHDialogOpen);
   const addTerminal = useAppStore(state => state.addTerminal);
+
+  useEffect(() => {
+    if (!startupDialogOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setStartupDialogOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [startupDialogOpen, setStartupDialogOpen]);
 
   if (!startupDialogOpen) return null;
 
@@ -23,7 +34,7 @@ const StartupDialog: React.FC = () => {
   };
 
   return (
-    <div className="dialog-overlay">
+    <div className="dialog-overlay" style={{ zIndex: 2000 }}>
       <div className="dialog" style={{ minWidth: 420, maxWidth: 480 }}>
         <div className="dialog-header">
           <h3>选择连接方式</h3>
